@@ -5,7 +5,7 @@ func BasicProject(packageName string) string {
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"` + packageName + `/src/middleware"
+	"` + packageName + `/src/middlewares"
 	"` + packageName + `/src/routes"
 )
 

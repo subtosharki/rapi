@@ -16,7 +16,7 @@ func init() {
 }
 
 var createProjectCmd = &cobra.Command{
-	Use:   "create-project",
+	Use:   "new:project",
 	Short: "Create a new project",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
@@ -34,8 +34,8 @@ var createProjectCmd = &cobra.Command{
 		println("1. Fiber")
 		println("2. Gin")
 		var framework string
+		println("Enter a number: ")
 		for framework != "1" && framework != "2" {
-			print("Enter a number: ")
 			_, err := fmt.Scanln(&framework)
 			lib.RapiErrorCheck(err)
 		}
@@ -53,7 +53,7 @@ func setup(projectName string, framework string) {
 	lib.RapiErrorCheck(err)
 	err = os.Mkdir("src/routes", 0755)
 	lib.RapiErrorCheck(err)
-	err = os.Mkdir("src/middleware", 0755)
+	err = os.Mkdir("src/middlewares", 0755)
 	lib.RapiErrorCheck(err)
 
 	lib.RapiInfo("Initializing go mod...")
@@ -83,7 +83,6 @@ func setup(projectName string, framework string) {
 		_, err = routesFile.WriteString(gin.BasicRoute)
 		lib.RapiErrorCheck(err)
 	}
-
 	lib.RapiInfo("Creating middleware...")
 	middlewareFile, err := os.Create("src/middleware/basic_middleware.go")
 	lib.RapiErrorCheck(err)
@@ -107,13 +106,12 @@ func setup(projectName string, framework string) {
 		lib.RapiErrorCheck(err)
 	}
 
-	lib.RapiInfo("Creating .rapi file")
+	lib.RapiInfo("Creating rapi.json file")
 	viper.AddConfigPath(".")
-	viper.SetConfigName(".rapi")
+	viper.SetConfigName("rapi")
 	viper.SetConfigType("json")
-	viper.AutomaticEnv()
-	viper.Set("framework", "fiber")
 	viper.Set("projectName", projectName)
+	viper.Set("framework", "fiber")
 	viper.Set("routesPath", "src/routes")
 	viper.Set("middlewarePath", "src/middleware")
 	err = viper.SafeWriteConfig()
