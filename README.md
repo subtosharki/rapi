@@ -25,4 +25,14 @@ Currently, rapi supports the following frameworks:
 - [x] Fiber
 - [ ] Echo
 - [ ] Chi
-- [ ] Gorilla Mux
+- [ ] Gorilla
+- [ ] Beego
+- [ ] Buffalo
+- [ ] Revel
+- [ ] Iris
+- [ ] Martini
+- [ ] Kit
+- [ ] Go-zero
+- [ ] Kratos
+- [ ] Fast HTTP
+- [ ] Gocraft
