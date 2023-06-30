@@ -1,13 +1,15 @@
 package fiber
 
-var BasicMiddleware = `package middleware
+func BasicMiddleware(routeName string, routePathName string) string {
+	return `package ` + routePathName + `
 
 import "github.com/gofiber/fiber/v2"
 	
-func BasicMiddleware(c *fiber.Ctx) error {
+func ` + routeName + `(c *fiber.Ctx) {
 	println("Middleware")
 	err := c.Next()
 	if err != nil {
 		 panic(err)
 	}
 }`
+}

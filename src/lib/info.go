@@ -1,5 +1,5 @@
 package lib
 
-func RapiInfo(message string) {
+func Info(message string) {
 	println("RAPI INFO: " + message)
 }

@@ -1,5 +1,5 @@
 package lib
 
-func RapiError(error string) {
+func Error(error string) {
 	println("RAPI ERROR: " + error)
 }

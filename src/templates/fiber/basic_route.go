@@ -1,9 +1,11 @@
 package fiber
 
-var BasicRoute = `package routes
+func BasicRoute(routeName string, routePathName string) string {
+	return `package ` + routePathName + `
 
-import "github.com/gofiber/fiber/v2"
-
-func BasicRoute(c *fiber.Ctx) error {
-	return c.SendString("Hello, World!")
-}`
+	import "github.com/gofiber/fiber/v2"
+	
+	func ` + routeName + `(c *fiber.Ctx) error {
+		return c.SendString("Hello, World!")
+	}`
+}

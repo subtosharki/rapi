@@ -9,14 +9,6 @@ var Root = &cobra.Command{
 	Use: "rapi",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Help()
-		lib.RapiErrorCheck(err)
+		lib.ErrorCheck(err)
 	},
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
-
 }

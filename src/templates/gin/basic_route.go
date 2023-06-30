@@ -1,12 +1,15 @@
 package gin
 
-var BasicRoute = `package routes
+func BasicRoute(routeName string, routePathName string) string {
+	return `package ` + routePathName + `
 
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func BasicRoute(c *gin.Context) error {
+func ` + routeName + `(c *gin.Context) {
 	c.String(http.StatusOK, "Hello, World!")
-}`
+}
+`
+}

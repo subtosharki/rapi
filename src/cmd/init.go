@@ -17,21 +17,21 @@ var supportedFrameworks = []string{"fiber", "gin"}
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize RAPI in a current project",
+	Short: "Initialize rapi in a current project",
 	Run: func(cmd *cobra.Command, args []string) {
 		_, err := os.Stat("rapi.json")
 		if err == nil {
-			lib.RapiError("rapi.json found, already initialized")
-			lib.RapiExitBad()
+			lib.Error("rapi.json found, already initialized")
+			lib.ExitBad()
 		}
 		_, err = os.Stat("go.mod")
 		if err != nil {
-			lib.RapiError("go.mod not found, is this an existing project?")
-			lib.RapiExitBad()
+			lib.Error("go.mod not found, is this an existing project?")
+			lib.ExitBad()
 		}
 
 		file, err := os.ReadFile("go.mod")
-		lib.RapiErrorCheck(err)
+		lib.ErrorCheck(err)
 		found := false
 		foundFramework := ""
 		for _, framework := range supportedFrameworks {
@@ -42,65 +42,72 @@ var initCmd = &cobra.Command{
 			}
 		}
 		if !found {
-			lib.RapiError("No supported framework found in go.mod, supported frameworks are:")
+			lib.Error("No supported framework found in go.mod, supported frameworks are:")
 			for _, framework := range supportedFrameworks {
 				println(framework)
 			}
-			lib.RapiExitBad()
+			lib.ExitBad()
 		}
-		projectName := ""
-		nameActive := false
-		for _, char := range string(file) {
-			if string(char) == " " {
-				nameActive = true
-			}
-			if nameActive {
-				projectName += string(char)
-			}
-			//dosnt work
-			if char == 92 { // / in ascii
-				nameActive = false
+		if strings.Split(string(file), " ")[0] != "module" {
+			lib.Error("Invalid go.mod file")
+			lib.ExitBad()
+		}
+		projectName := strings.Split(strings.Split(string(file), " ")[1], "\n")[0]
+		var routesPath string
+		commonPaths := []string{"src/routes", "routes", "src/route", "route"}
+		for _, path := range commonPaths {
+			_, err = os.Stat(path)
+			if err == nil {
+				lib.Info("Using routes in " + path)
+				routesPath = path
 				break
 			}
 		}
-		if projectName == "" {
-			lib.RapiError("No module name found in go.mod")
-			lib.RapiExitBad()
+		if routesPath == "" {
+			lib.Info("Where are your routes located?")
+			for routesPath == "" {
+				_, err = fmt.Scanln(&routesPath)
+				lib.ErrorCheck(err)
+			}
+			_, err = os.Stat(routesPath)
+			if err != nil {
+				lib.Error("Invalid path to routes")
+				lib.ExitBad()
+			}
 		}
-
-		var routesPath string
-		lib.RapiInfo("Where are your routes located?")
-		for routesPath == "" {
-			_, err = fmt.Scanln(&routesPath)
-			lib.RapiErrorCheck(err)
+		var middlewaresPath string
+		commonPaths = []string{"src/middlewares", "middlewares", "src/middleware", "middleware"}
+		for _, path := range commonPaths {
+			_, err = os.Stat(path)
+			if err == nil {
+				lib.Info("Using middlewares in " + path)
+				middlewaresPath = path
+				break
+			}
 		}
-		_, err = os.Stat(routesPath)
-		if err != nil {
-			lib.RapiError("Invalid path to routes")
-			lib.RapiExitBad()
+		if middlewaresPath == "" {
+			lib.Info("Where are your middlewares located?")
+			for middlewaresPath == "" {
+				_, err = fmt.Scanln(&middlewaresPath)
+				lib.ErrorCheck(err)
+			}
+			_, err = os.Stat(middlewaresPath)
+			if err != nil {
+				lib.Error("Invalid path to middlewares")
+				lib.ExitBad()
+			}
 		}
-		var middlewarePath string
-		lib.RapiInfo("Where are your middlewares located?")
-		for middlewarePath == "" {
-			_, err = fmt.Scanln(&middlewarePath)
-			lib.RapiErrorCheck(err)
-		}
-		_, err = os.Stat(middlewarePath)
-		if err != nil {
-			lib.RapiError("Invalid path to middlewares")
-			lib.RapiExitBad()
-		}
-
 		viper.AddConfigPath(".")
 		viper.SetConfigName("rapi")
 		viper.SetConfigType("json")
-		viper.Set("projectName", projectName)
+		viper.Set("projectname", projectName)
 		viper.Set("framework", foundFramework)
-		viper.Set("routesPath", routesPath)
-		viper.Set("middlewarePath", middlewarePath)
+		viper.Set("routespath", routesPath)
+		viper.Set("middlewarespath", middlewaresPath)
 		err = viper.SafeWriteConfig()
-		lib.RapiErrorCheck(err)
+		lib.ErrorCheck(err)
 
-		lib.RapiInfo("RAPI initialized successfully")
+		lib.Info("Initialized successfully")
+		lib.ExitOk()
 	},
 }

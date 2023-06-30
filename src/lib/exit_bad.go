@@ -2,6 +2,6 @@ package lib
 
 import "os"
 
-func RapiExitBad() {
+func ExitBad() {
 	os.Exit(1)
 }
