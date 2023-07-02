@@ -16,7 +16,7 @@ func main() {
 	app := fiber.New()
 
 	app.Get("/", routes.BasicRoute)
-	app.Use("/", middleware.BasicMiddleware)
+	app.Use("/", middlewares.BasicMiddleware)
 
 	err := app.Listen("0.0.0.0" + PORT)
 	if err != nil {

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/subtosharki/rapi/src/lib"
 	"os"
 	"strings"
@@ -30,7 +29,7 @@ var initCmd = &cobra.Command{
 			lib.ExitBad()
 		}
 
-		file, err := os.ReadFile("go.mod")
+		file := lib.LoadGoModuleFile()
 		lib.ErrorCheck(err)
 		found := false
 		foundFramework := ""
@@ -48,11 +47,7 @@ var initCmd = &cobra.Command{
 			}
 			lib.ExitBad()
 		}
-		if strings.Split(string(file), " ")[0] != "module" {
-			lib.Error("Invalid go.mod file")
-			lib.ExitBad()
-		}
-		projectName := strings.Split(strings.Split(string(file), " ")[1], "\n")[0]
+		projectName := lib.GetGoModuleName(file)
 		var routesPath string
 		commonPaths := []string{"src/routes", "routes", "src/route", "route"}
 		for _, path := range commonPaths {
@@ -97,16 +92,29 @@ var initCmd = &cobra.Command{
 				lib.ExitBad()
 			}
 		}
-		viper.AddConfigPath(".")
-		viper.SetConfigName("rapi")
-		viper.SetConfigType("json")
-		viper.Set("projectname", projectName)
-		viper.Set("framework", foundFramework)
-		viper.Set("routespath", routesPath)
-		viper.Set("middlewarespath", middlewaresPath)
-		err = viper.SafeWriteConfig()
-		lib.ErrorCheck(err)
-
+		var mainFilePath string
+		commonPaths = []string{"src/main.go", "main.go"}
+		for _, path := range commonPaths {
+			_, err = os.Stat(path)
+			if err == nil {
+				lib.Info("Using main.go in " + path)
+				mainFilePath = path
+				break
+			}
+		}
+		if mainFilePath == "" {
+			lib.Info("Where is your main.go located?")
+			for mainFilePath == "" {
+				_, err = fmt.Scanln(&mainFilePath)
+				lib.ErrorCheck(err)
+			}
+			_, err = os.Stat(mainFilePath)
+			if err != nil {
+				lib.Error("Invalid path to main.go")
+				lib.ExitBad()
+			}
+		}
+		lib.SetupConfig(projectName, foundFramework, routesPath, middlewaresPath, mainFilePath)
 		lib.Info("Initialized successfully")
 		lib.ExitOk()
 	},

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/subtosharki/rapi/src/lib"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
@@ -95,18 +94,15 @@ var createProjectCmd = &cobra.Command{
 			err = exec.Command("go", "get", "-u", "github.com/gin-gonic/gin").Run()
 			lib.ErrorCheck(err)
 		}
-
 		lib.Info("Creating rapi.json file")
-		viper.AddConfigPath(".")
-		viper.SetConfigName("rapi")
-		viper.SetConfigType("json")
-		viper.Set("projectname", args[0])
-		viper.Set("framework", "fiber")
-		viper.Set("routespath", "src/routes")
-		viper.Set("middlewarepath", "src/middleware")
-		err = viper.SafeWriteConfig()
-		lib.ErrorCheck(err)
-
+		var frameworkName string
+		switch framework {
+		case "1":
+			frameworkName = "fiber"
+		case "2":
+			frameworkName = "gin"
+		}
+		lib.SetupConfig(args[0], frameworkName, "src/routes", "src/middlewares", "src/main.go")
 		lib.Info("Done! Run `cd " + args[0] + "` and `go run src/main.go` to start your server.")
 		lib.ExitOk()
 	},
