@@ -15,10 +15,11 @@ func init() {
 }
 
 var createProjectCmd = &cobra.Command{
-	Use:   "new",
+	Use:   "new [name]",
 	Short: "Create a new project",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		projectName := args[0]
 		_, err := os.Open(args[0])
 		if err == nil {
 			lib.Error("Directory " + args[0] + " already exists")
@@ -33,10 +34,10 @@ var createProjectCmd = &cobra.Command{
 			_, err := fmt.Scanln(&framework)
 			lib.ErrorCheck(err)
 		}
-		lib.Info("Creating " + args[0] + " directory...")
-		err = os.Mkdir(args[0], 0755)
+		lib.Info("Creating " + projectName + " directory...")
+		err = os.Mkdir(projectName, 0755)
 		lib.ErrorCheck(err)
-		err = os.Chdir(args[0])
+		err = os.Chdir(projectName)
 		lib.ErrorCheck(err)
 		err = os.Mkdir("src", 0755)
 		lib.ErrorCheck(err)
@@ -44,20 +45,18 @@ var createProjectCmd = &cobra.Command{
 		lib.ErrorCheck(err)
 		err = os.Mkdir("src/middlewares", 0755)
 		lib.ErrorCheck(err)
-
 		lib.Info("Initializing go mod...")
-		err = exec.Command("go", "mod", "init", args[0]).Run()
+		err = exec.Command("go", "mod", "init", projectName).Run()
 		lib.ErrorCheck(err)
-
 		lib.Info("Creating main.go...")
 		mainFile, err := os.Create("src/main.go")
 		lib.ErrorCheck(err)
 		switch framework {
 		case "1":
-			_, err = mainFile.WriteString(fiber.BasicProject(args[0]))
+			_, err = mainFile.WriteString(fiber.BasicProject(projectName))
 			lib.ErrorCheck(err)
 		case "2":
-			_, err = mainFile.WriteString(gin.BasicProject(args[0]))
+			_, err = mainFile.WriteString(gin.BasicProject(projectName))
 			lib.ErrorCheck(err)
 		}
 
@@ -102,8 +101,14 @@ var createProjectCmd = &cobra.Command{
 		case "2":
 			frameworkName = "gin"
 		}
-		lib.SetupConfig(args[0], frameworkName, "src/routes", "src/middlewares", "src/main.go")
-		lib.Info("Done! Run `cd " + args[0] + "` and `go run src/main.go` to start your server.")
+		lib.SetupConfig(lib.Config{
+			Framework:       frameworkName,
+			ProjectName:     projectName,
+			RoutesPath:      "src/routes",
+			MiddlewaresPath: "src/middlewares",
+			MainFilePath:    "src/main.go",
+		})
+		lib.Info("Done! Run `cd " + projectName + "` and `go run src/main.go` to start your server.")
 		lib.ExitOk()
 	},
 }

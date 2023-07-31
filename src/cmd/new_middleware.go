@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/subtosharki/rapi/src/lib"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
@@ -16,39 +15,17 @@ func init() {
 }
 
 var newMiddlewareCmd = &cobra.Command{
-	Use:   "new:middleware",
+	Use:   "new:middleware [name]",
 	Short: "Create a new middleware",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := os.Stat("rapi.json")
-		if err != nil {
-			lib.Error("rapi.json not found, please run rapi init")
-			lib.ExitBad()
-		}
-		lib.LoadConfig()
-		middlewaresPath := viper.GetString("middlewarespath")
-		if middlewaresPath == "" {
-			lib.Error("middlewarespath not found in rapi.json")
-		}
-		framework := viper.GetString("framework")
-		if framework == "" {
-			lib.Error("framework not found in rapi.json")
-		}
-		mainFile := viper.GetString("mainfile")
-		if mainFile == "" {
-			lib.Error("mainfile not found in rapi.json")
-		}
+		config := lib.GetConfig()
 		middlewareName := args[0]
-		_, err = os.Stat(middlewaresPath)
-		if err != nil {
-			lib.Error("middlewarespath not found")
-			lib.ExitBad()
-		}
 		if strings.Contains(middlewareName, "/") {
 			lib.Error("Middleware name cannot contain /")
 			lib.ExitBad()
 		}
-		_, err = os.Stat(middlewaresPath + "/" + middlewareName + ".go")
+		_, err := os.Stat(config.MiddlewaresPath + "/" + middlewareName + ".go")
 		if err == nil {
 			lib.Error("Middleware already exists")
 			lib.ExitBad()
@@ -76,15 +53,16 @@ var newMiddlewareCmd = &cobra.Command{
 				lib.ErrorCheck(err)
 			}
 		}
-		file, err := os.OpenFile(mainFile, os.O_RDWR, 0644)
-		fileBytes, err := os.ReadFile(mainFile)
+		mainFile, err := os.OpenFile(config.MainFilePath, os.O_RDWR, 0644)
 		lib.ErrorCheck(err)
 		defer func(file *os.File) {
 			err := file.Close()
 			lib.ErrorCheck(err)
-		}(file)
+		}(mainFile)
+		fileBytes, err := os.ReadFile(config.MainFilePath)
+		lib.ErrorCheck(err)
 		splitFile := strings.Split(string(fileBytes), "\n")
-		switch framework {
+		switch config.Framework {
 		case "fiber":
 			if middlewareType == "1" {
 				var line int
@@ -125,10 +103,10 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else if middlewareType == "2" {
 				var appName string
@@ -176,10 +154,10 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else if middlewareType == "3" {
 				var appName string
@@ -226,10 +204,10 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
 		case "gin":
@@ -272,10 +250,10 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else if middlewareType == "2" {
 				var appName string
@@ -323,11 +301,10 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
-
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else if middlewareType == "3" {
 				var appName string
@@ -374,34 +351,34 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if !found {
 					goModFile := lib.LoadGoModuleFile()
-					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + middlewaresPath + "\"\n"
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
 
 				}
 				finalString := strings.Join(splitFile, "\n")
-				_, err := file.WriteString(finalString)
+				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
 		default:
 			lib.Error("Invalid framework")
 		}
-		file, err = os.Create(middlewaresPath + "/" + middlewareName + ".go")
+		mainFile, err = os.Create(config.MiddlewaresPath + "/" + middlewareName + ".go")
 		lib.ErrorCheck(err)
-		pathName := strings.Split(middlewaresPath, "/")
+		pathName := strings.Split(config.MiddlewaresPath, "/")
 		middlewareName = lib.UpFirstLetter(middlewareName)
-		switch framework {
+		switch config.Framework {
 		case "fiber":
-			_, err := file.WriteString(fiber.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(fiber.BasicRoute(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		case "gin":
-			_, err := file.WriteString(gin.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(gin.BasicRoute(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		default:
 			lib.Error("Invalid framework")
 			lib.ExitBad()
 		}
-		err = file.Close()
+		err = mainFile.Close()
 		lib.ErrorCheck(err)
-		lib.Info("Middleware created successfully")
+		lib.Info("New middleware " + middlewareName + " created successfully")
 		lib.ExitOk()
 	},
 }

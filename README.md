@@ -5,7 +5,9 @@ rapi, (rap-ee) is a CLI tool to make and manage Go APIs, supporting popular fram
 - Create a new project
 - Initialize rapi in a current project
 - Create a new route and middleware
-- Automatically adds routes and middlewares to the main file (Supports Global, Group, and Route)
+- Add routes to your project, supporting Global and Grouping routes
+- Add middlewares to your project, with options for Global, Group, and Route middleware
+- Add groups to your project
 
 ## Installation
 ```
@@ -26,7 +28,7 @@ rapi [command] [arguments]
   new:route        [name]       Create a new route
 ```
 
-Currently, rapi supports the following frameworks:
+Currently, rapi supports the following frameworks (more to come):
 - [x] [Gin](https://github.com/gin-gonic/gin)
 - [x] [Fiber](https://github.com/gofiber/fiber)
 - [ ] [Echo](https://github.com/labstack/echo)
@@ -42,3 +44,7 @@ Currently, rapi supports the following frameworks:
 - [ ] [Fast HTTP](https://github.com/valyala/fasthttp)
 - [ ] [Gocraft](https://github.com/gocraft/web)
 - [ ] [Mocha](https://github.com/cloudretic/matcha/tree/main)
+
+## Future Plans
+- [ ] Add support for other languages frameworks (Express, Flask, etc.)Laravel
+- [ ] Add `rapi run` command to run frameworks start command, with a port flag, and any other flags if needed

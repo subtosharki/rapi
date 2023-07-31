@@ -20,7 +20,7 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		_, err := os.Stat("rapi.json")
 		if err == nil {
-			lib.Error("rapi.json found, already initialized")
+			lib.Error("rapi.json already exists")
 			lib.ExitBad()
 		}
 		_, err = os.Stat("go.mod")
@@ -28,7 +28,6 @@ var initCmd = &cobra.Command{
 			lib.Error("go.mod not found, is this an existing project?")
 			lib.ExitBad()
 		}
-
 		file := lib.LoadGoModuleFile()
 		lib.ErrorCheck(err)
 		found := false
@@ -114,7 +113,13 @@ var initCmd = &cobra.Command{
 				lib.ExitBad()
 			}
 		}
-		lib.SetupConfig(projectName, foundFramework, routesPath, middlewaresPath, mainFilePath)
+		lib.SetupConfig(lib.Config{
+			ProjectName:     projectName,
+			Framework:       foundFramework,
+			RoutesPath:      routesPath,
+			MiddlewaresPath: middlewaresPath,
+			MainFilePath:    mainFilePath,
+		})
 		lib.Info("Initialized successfully")
 		lib.ExitOk()
 	},

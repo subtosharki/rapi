@@ -1,11 +1,12 @@
 package echo
 
-func BasicRoute(packageName string) string {
+func BasicRoute(routeName string, packageName string) string {
 	return `package ` + packageName + `
-	middleware := func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			println("request to /users")
-			return next(c)
-		}
-	}`
+
+import "github.com/labstack/echo/v4"
+
+func ` + routeName + `(c echo.Context) error {
+	println("request to /users")
+	return next(c)
+}`
 }

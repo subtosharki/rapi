@@ -3,6 +3,7 @@ package lib
 import "github.com/spf13/viper"
 
 func LoadConfig() {
+	CheckForConfig()
 	viper.SetConfigName("rapi")
 	viper.SetConfigType("json")
 	viper.AddConfigPath(".")

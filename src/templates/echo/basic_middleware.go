@@ -1,12 +1,12 @@
 package echo
 
-func BasicMiddleware(routeName string, routePathName string) string {
-	return `package ` + routePathName + `
+func BasicMiddleware(middlewareName string, middlewarePathName string) string {
+	return `package ` + middlewarePathName + `
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/labstack/echo/v4"
 
-func ` + routeName + `() {
-	func(next echo.HandlerFunc) echo.HandlerFunc {
+func ` + middlewareName + `() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			println("request to /users")
 			return next(c)
