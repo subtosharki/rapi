@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
+	"github.com/subtosharki/rapi/src/templates/chi"
 	"github.com/subtosharki/rapi/src/templates/echo"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
@@ -23,7 +24,7 @@ var newRouteCmd = &cobra.Command{
 		config := lib.GetConfig()
 		routeName := args[0]
 		if strings.Contains(routeName, "/") {
-			lib.Error("Rd")
+			lib.Error("Route name cannot contain '/'")
 			lib.ExitBad()
 		}
 		_, err := os.Stat(config.RoutesPath + "/" + routeName + ".go")
@@ -341,14 +342,99 @@ var newRouteCmd = &cobra.Command{
 				_, err := file.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
-		default:
-			lib.Error("Invalid framework")
+		case "chi":
+			if routeType == "1" {
+				var line int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find r := chi.NewRouter()")
+					lib.ExitBad()
+				}
+				wordsOfLine := strings.Split(splitMainFile[line], " ")
+				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
+				splitMainFile[line] = newLine
+				var importStart int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitMainFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "routes") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
+				}
+				finalString := strings.Join(splitMainFile, "\n")
+				_, err := file.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if routeType == "2" {
+				var line int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find r := chi.NewRouter()")
+					lib.ExitBad()
+				}
+				wordsOfLine := strings.Split(splitMainFile[line], " ")
+				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Group(" + groupName + ").Use(routes." + lib.UpFirstLetter(routeName) + ")"
+				splitMainFile[line] = newLine
+				var importStart int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitMainFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "routes") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
+				}
+				finalString := strings.Join(splitMainFile, "\n")
+				_, err := file.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
 		}
 		newRouteFile, err := os.Create(config.RoutesPath + "/" + routeName + ".go")
-		if err != nil {
-			lib.Error("Error creating route file")
-			lib.ExitBad()
-		}
+		lib.ErrorCheck(err)
 		defer func(newRouteFile *os.File) {
 			err := newRouteFile.Close()
 			lib.ErrorCheck(err)
@@ -358,31 +444,21 @@ var newRouteCmd = &cobra.Command{
 		switch config.Framework {
 		case "fiber":
 			_, err := newRouteFile.WriteString(fiber.BasicRoute(routeName, pathName[len(pathName)-1]))
-			if err != nil {
-				lib.Error("Error writing to file")
-				lib.ExitBad()
-			}
+			lib.ErrorCheck(err)
 		case "gin":
 			_, err := newRouteFile.WriteString(gin.BasicRoute(routeName, pathName[len(pathName)-1]))
-			if err != nil {
-				lib.Error("Error writing to file")
-				lib.ExitBad()
-			}
+			lib.ErrorCheck(err)
 		case "echo":
 			_, err := newRouteFile.WriteString(echo.BasicRoute(routeName, pathName[len(pathName)-1]))
-			if err != nil {
-				lib.Error("Error writing to file")
-				lib.ExitBad()
-			}
+			lib.ErrorCheck(err)
+		case "chi":
+			_, err := newRouteFile.WriteString(chi.BasicRoute(routeName, pathName[len(pathName)-1]))
+			lib.ErrorCheck(err)
 		default:
 			lib.Error("Invalid framework")
 			lib.ExitBad()
 		}
-		if err != nil {
-			lib.Error("Error closing file")
-			lib.ExitBad()
-		}
-		lib.Info("New route" + routeName + " created successfully")
+		lib.Info("New route " + routeName + " created successfully")
 		lib.ExitOk()
 	},
 }

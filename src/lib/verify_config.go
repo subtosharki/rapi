@@ -22,6 +22,7 @@ func VerifyConfig(config Config) {
 	case "gin":
 	case "echo":
 	case "fiber":
+	case "chi":
 	default:
 		Error("Invalid framework")
 		ExitBad()

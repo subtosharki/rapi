@@ -12,7 +12,7 @@ func init() {
 	Root.AddCommand(initCmd)
 }
 
-var supportedFrameworks = []string{"fiber", "gin", "echo"}
+var supportedFrameworks = []string{"fiber", "gin", "echo", "chi"}
 
 var initCmd = &cobra.Command{
 	Use:   "init",

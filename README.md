@@ -33,7 +33,7 @@ Currently, rapi supports the following frameworks (more to come):
 - [x] [Gin](https://github.com/gin-gonic/gin)
 - [x] [Fiber](https://github.com/gofiber/fiber)
 - [X] [Echo](https://github.com/labstack/echo)
-- [ ] [Chi](https://github.com/go-chi/chi)
+- [X] [Chi](https://github.com/go-chi/chi)
 - [ ] [Beego](https://github.com/beego/beego)
 - [ ] [Buffalo](https://github.com/gobuffalo/buffalo)
 - [ ] [Revel](https://github.com/revel/revel)
@@ -51,4 +51,3 @@ Currently, rapi supports the following frameworks (more to come):
 - [ ] Add 'rapi install' command to install middlewares for each framework
 - [ ] Add middleware templates for each framework by flag (Database, Authentication, etc.)
 - [ ] Add flags to 'rapi new' command to specify framework to speed up project creation
-

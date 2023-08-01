@@ -148,8 +148,41 @@ var newGroupCommand = &cobra.Command{
 				_, err = mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
-		default:
-			lib.Error("Invalid framework")
+		case "chi":
+			if nestedGroup == "n" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find r := chi.NewRouter() in main.go")
+					lib.ExitBad()
+				}
+				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
+				finalString := strings.Join(splitFile, "\n")
+				_, err = mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else {
+				var parentLine int
+				for i, v := range splitFile {
+					if strings.Contains(v, "r.Group(\"/"+parentGroup+"\")") {
+						parentLine = i + 1
+					}
+				}
+				if parentLine == 0 {
+					lib.Error("Could not find r.Group(\"/" + parentGroup + "\") in main.go")
+					lib.ExitBad()
+				}
+				if splitFile[parentLine+1] == "{" {
+					parentLine += 1
+				}
+				splitFile[parentLine] = splitFile[parentLine] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
+				finalString := strings.Join(splitFile, "\n")
+				_, err = mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
 		}
 		lib.Info("New group created successfully")
 		lib.ExitOk()

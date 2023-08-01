@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
+	"github.com/subtosharki/rapi/src/templates/chi"
 	"github.com/subtosharki/rapi/src/templates/echo"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
@@ -497,8 +498,137 @@ var newMiddlewareCmd = &cobra.Command{
 				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
-		default:
-			lib.Error("Invalid framework")
+		case "chi":
+			if middlewareType == "1" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find chi.NewRouter()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if middlewareType == "2" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find chi.NewRouter()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if middlewareType == "3" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "r := chi.NewRouter()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find chi.NewRouter()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
 		}
 		mainFile, err = os.Create(config.MiddlewaresPath + "/" + middlewareName + ".go")
 		lib.ErrorCheck(err)
@@ -514,12 +644,10 @@ var newMiddlewareCmd = &cobra.Command{
 		case "echo":
 			_, err := mainFile.WriteString(echo.BasicRoute(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
-		default:
-			lib.Error("Invalid framework")
-			lib.ExitBad()
+		case "chi":
+			_, err := mainFile.WriteString(chi.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			lib.ErrorCheck(err)
 		}
-		err = mainFile.Close()
-		lib.ErrorCheck(err)
 		lib.Info("New middleware " + middlewareName + " created successfully")
 		lib.ExitOk()
 	},
