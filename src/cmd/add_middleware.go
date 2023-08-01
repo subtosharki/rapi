@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
+	"github.com/subtosharki/rapi/src/templates/echo"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
 	"os"
@@ -15,8 +16,8 @@ func init() {
 }
 
 var newMiddlewareCmd = &cobra.Command{
-	Use:   "new:middleware [name]",
-	Short: "Create a new middleware",
+	Use:   "add:middleware [name]",
+	Short: "Add a new middleware",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		config := lib.GetConfig()
@@ -358,6 +359,144 @@ var newMiddlewareCmd = &cobra.Command{
 				_, err := mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
+		case "echo":
+			if middlewareType == "1" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find echo.New()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + "e.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if middlewareType == "2" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find echo.New()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + "e.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if middlewareType == "3" {
+				var appName string
+				for _, v := range splitFile {
+					if strings.Contains(v, "e := echo.New()") {
+						appName = strings.Split(v, " ")[0]
+						break
+					}
+				}
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find echo.New()")
+					lib.ExitBad()
+				}
+				newLine := splitFile[line] + "\n" + appName + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
+				splitFile[line] = newLine
+				var importStart int
+				for i, v := range splitFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "middlewares") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitFile[importStart+1] = splitFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.MiddlewaresPath + "\"\n"
+				}
+				finalString := strings.Join(splitFile, "\n")
+				_, err := mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
 		default:
 			lib.Error("Invalid framework")
 		}
@@ -371,6 +510,9 @@ var newMiddlewareCmd = &cobra.Command{
 			lib.ErrorCheck(err)
 		case "gin":
 			_, err := mainFile.WriteString(gin.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			lib.ErrorCheck(err)
+		case "echo":
+			_, err := mainFile.WriteString(echo.BasicRoute(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		default:
 			lib.Error("Invalid framework")

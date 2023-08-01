@@ -13,8 +13,8 @@ func init() {
 }
 
 var newGroupCommand = &cobra.Command{
-	Use:   "new:group [name]",
-	Short: "Create a new group",
+	Use:   "add:group [name]",
+	Short: "Add a new group",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		config := lib.GetConfig()
@@ -33,15 +33,15 @@ var newGroupCommand = &cobra.Command{
 				lib.ErrorCheck(err)
 			}
 		}
-		file, err := os.OpenFile(config.MainFilePath, os.O_RDWR, 0644)
+		mainFile, err := os.OpenFile(config.MainFilePath, os.O_RDWR, 0644)
 		lib.ErrorCheck(err)
 		defer func(file *os.File) {
 			err := file.Close()
 			lib.ErrorCheck(err)
-		}(file)
-		fileBytes, err := os.ReadFile(config.MainFilePath)
+		}(mainFile)
+		mainFileBytes, err := os.ReadFile(config.MainFilePath)
 		lib.ErrorCheck(err)
-		splitFile := strings.Split(string(fileBytes), "\n")
+		splitFile := strings.Split(string(mainFileBytes), "\n")
 		switch config.Framework {
 		case "fiber":
 			if nestedGroup == "n" {
@@ -57,7 +57,7 @@ var newGroupCommand = &cobra.Command{
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := app.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
-				_, err = file.WriteString(finalString)
+				_, err = mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else {
 				var parentLine int
@@ -75,7 +75,7 @@ var newGroupCommand = &cobra.Command{
 				}
 				splitFile[parentLine] = splitFile[parentLine] + "\n\t" + groupName + "Group := app.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
-				_, err = file.WriteString(finalString)
+				_, err = mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
 		case "gin":
@@ -92,7 +92,7 @@ var newGroupCommand = &cobra.Command{
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
-				_, err = file.WriteString(finalString)
+				_, err = mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			} else {
 				var parentLine int
@@ -110,7 +110,42 @@ var newGroupCommand = &cobra.Command{
 				}
 				splitFile[parentLine] = splitFile[parentLine] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
-				_, err = file.WriteString(finalString)
+				_, err = mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
+		case "echo":
+			if nestedGroup == "n" {
+				var line int
+				for i, v := range splitFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find e := echo.New() in main.go")
+					lib.ExitBad()
+				}
+				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := e.Group(\"/" + groupName + "\") \n{\n\n\t}"
+				finalString := strings.Join(splitFile, "\n")
+				_, err = mainFile.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else {
+				var parentLine int
+				for i, v := range splitFile {
+					if strings.Contains(v, "e.Group(\"/"+parentGroup+"\")") {
+						parentLine = i + 1
+					}
+				}
+				if parentLine == 0 {
+					lib.Error("Could not find e.Group(\"/" + parentGroup + "\") in main.go")
+					lib.ExitBad()
+				}
+				if splitFile[parentLine+1] == "{" {
+					parentLine += 1
+				}
+				splitFile[parentLine] = splitFile[parentLine] + "\n\t" + groupName + "Group := e.Group(\"/" + groupName + "\") \n{\n\n\t}"
+				finalString := strings.Join(splitFile, "\n")
+				_, err = mainFile.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
 		default:

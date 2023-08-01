@@ -1,7 +1,7 @@
 package fiber
 
 func BasicProject(packageName string) string {
-	return `package ` + packageName + `
+	return `package main
 
 import (
 	"github.com/gofiber/fiber/v2"

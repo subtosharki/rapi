@@ -1,12 +1,10 @@
 package echo
 
 func BasicProject(packageName string) string {
-	return `package ` + packageName + `
+	return `package main
 
 import (
   "github.com/labstack/echo/v4"
-  "github.com/labstack/echo/v4/middleware"
-  "net/http"
   "` + packageName + `/src/middlewares"
   "` + packageName + `/src/routes"
 )
@@ -16,18 +14,13 @@ func main() {
   e := echo.New()
 
   // Middleware
-  e.Use(middleware.Logger())
-  e.Use(middleware.Recover())
+  e.Use(middlewares.BasicMiddleware())
 
   // Routes
-  e.GET("/", hello)
+  e.GET("/", routes.BasicRoute)
 
   // Start server
   e.Logger.Fatal(e.Start(":1323"))
 }
-
-// Handler
-func hello(c echo.Context) error {
-  return c.String(http.StatusOK, "Hello, World!")
-}`
+`
 }

@@ -24,14 +24,15 @@ rapi [command] [arguments]
   help             [command]    Help about any command
   init                          Initialize rapi in a current project
   new              [name]       Create a new project
-  new:middleware   [name]       Create a new middleware
-  new:route        [name]       Create a new route
+  add:middleware   [name]       Add a new middleware
+  add:route        [name]       Add a new route
+  add:group        [name]       Add a new group
 ```
 
 Currently, rapi supports the following frameworks (more to come):
 - [x] [Gin](https://github.com/gin-gonic/gin)
 - [x] [Fiber](https://github.com/gofiber/fiber)
-- [ ] [Echo](https://github.com/labstack/echo)
+- [X] [Echo](https://github.com/labstack/echo)
 - [ ] [Chi](https://github.com/go-chi/chi)
 - [ ] [Beego](https://github.com/beego/beego)
 - [ ] [Buffalo](https://github.com/gobuffalo/buffalo)
@@ -46,5 +47,8 @@ Currently, rapi supports the following frameworks (more to come):
 - [ ] [Mocha](https://github.com/cloudretic/matcha/tree/main)
 
 ## Future Plans
-- [ ] Add support for other languages frameworks (Express, Flask, etc.)Laravel
-- [ ] Add `rapi run` command to run frameworks start command, with a port flag, and any other flags if needed
+- [ ] Add support for other languages (Javascript, Python, PHP, etc.)
+- [ ] Add 'rapi install' command to install middlewares for each framework
+- [ ] Add middleware templates for each framework by flag (Database, Authentication, etc.)
+- [ ] Add flags to 'rapi new' command to specify framework to speed up project creation
+

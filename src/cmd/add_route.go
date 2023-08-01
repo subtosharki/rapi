@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
+	"github.com/subtosharki/rapi/src/templates/echo"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
 	"os"
@@ -15,14 +16,14 @@ func init() {
 }
 
 var newRouteCmd = &cobra.Command{
-	Use:   "new:route [name]",
-	Short: "Create a new route",
+	Use:   "add:route [name]",
+	Short: "Add a new route",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		config := lib.GetConfig()
 		routeName := args[0]
 		if strings.Contains(routeName, "/") {
-			lib.Error("Route name cannot contain /")
+			lib.Error("Rd")
 			lib.ExitBad()
 		}
 		_, err := os.Stat(config.RoutesPath + "/" + routeName + ".go")
@@ -250,6 +251,96 @@ var newRouteCmd = &cobra.Command{
 				_, err := file.WriteString(finalString)
 				lib.ErrorCheck(err)
 			}
+		case "echo":
+			if routeType == "1" {
+				var line int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find e := echo.New()")
+					lib.ExitBad()
+				}
+				wordsOfLine := strings.Split(splitMainFile[line], " ")
+				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
+				splitMainFile[line] = newLine
+				var importStart int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitMainFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "routes") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
+				}
+				finalString := strings.Join(splitMainFile, "\n")
+				_, err := file.WriteString(finalString)
+				lib.ErrorCheck(err)
+			} else if routeType == "2" {
+				var line int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "e := echo.New()") {
+						line = i
+						break
+					}
+				}
+				if line == 0 {
+					lib.Error("Could not find e := echo.New()")
+					lib.ExitBad()
+				}
+				wordsOfLine := strings.Split(splitMainFile[line], " ")
+				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Group(" + groupName + ").Use(routes." + lib.UpFirstLetter(routeName) + ")"
+				splitMainFile[line] = newLine
+				var importStart int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, "(") {
+						importStart = i
+						break
+					}
+				}
+				var importEnd int
+				for i, v := range splitMainFile {
+					if strings.Contains(v, ")") {
+						importEnd = i
+						break
+					}
+				}
+				imports := splitMainFile[importStart:importEnd]
+				var found bool
+				for _, v := range imports {
+					if strings.Contains(v, "routes") {
+						found = true
+						break
+					}
+				}
+				if !found {
+					goModFile := lib.LoadGoModuleFile()
+					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
+				}
+				finalString := strings.Join(splitMainFile, "\n")
+				_, err := file.WriteString(finalString)
+				lib.ErrorCheck(err)
+			}
 		default:
 			lib.Error("Invalid framework")
 		}
@@ -273,6 +364,12 @@ var newRouteCmd = &cobra.Command{
 			}
 		case "gin":
 			_, err := newRouteFile.WriteString(gin.BasicRoute(routeName, pathName[len(pathName)-1]))
+			if err != nil {
+				lib.Error("Error writing to file")
+				lib.ExitBad()
+			}
+		case "echo":
+			_, err := newRouteFile.WriteString(echo.BasicRoute(routeName, pathName[len(pathName)-1]))
 			if err != nil {
 				lib.Error("Error writing to file")
 				lib.ExitBad()

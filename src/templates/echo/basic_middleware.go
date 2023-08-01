@@ -8,7 +8,7 @@ import "github.com/labstack/echo/v4"
 func ` + middlewareName + `() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			println("request to /users")
+			println("Middleware")
 			return next(c)
 		}
 	}

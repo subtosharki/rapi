@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
+	"github.com/subtosharki/rapi/src/templates/echo"
 	"github.com/subtosharki/rapi/src/templates/fiber"
 	"github.com/subtosharki/rapi/src/templates/gin"
 	"os"
@@ -28,9 +29,10 @@ var createProjectCmd = &cobra.Command{
 		println("Choose a Framework to use:\n")
 		println("1. Fiber")
 		println("2. Gin")
+		println("3. Echo")
 		var framework string
 		println("Enter a number: ")
-		for framework != "1" && framework != "2" {
+		for framework != "1" && framework != "2" && framework != "3" {
 			_, err := fmt.Scanln(&framework)
 			lib.ErrorCheck(err)
 		}
@@ -58,6 +60,9 @@ var createProjectCmd = &cobra.Command{
 		case "2":
 			_, err = mainFile.WriteString(gin.BasicProject(projectName))
 			lib.ErrorCheck(err)
+		case "3":
+			_, err = mainFile.WriteString(echo.BasicProject(projectName))
+			lib.ErrorCheck(err)
 		}
 
 		lib.Info("Creating routes...")
@@ -70,6 +75,9 @@ var createProjectCmd = &cobra.Command{
 		case "2":
 			_, err = routesFile.WriteString(gin.BasicRoute("BasicRoute", "routes"))
 			lib.ErrorCheck(err)
+		case "3":
+			_, err = routesFile.WriteString(echo.BasicRoute("BasicRoute", "routes"))
+			lib.ErrorCheck(err)
 		}
 		lib.Info("Creating middlewares...")
 		middlewareFile, err := os.Create("src/middlewares/basic_middleware.go")
@@ -80,6 +88,9 @@ var createProjectCmd = &cobra.Command{
 			lib.ErrorCheck(err)
 		case "2":
 			_, err = middlewareFile.WriteString(gin.BasicMiddleware("BasicMiddleware", "middlewares"))
+			lib.ErrorCheck(err)
+		case "3":
+			_, err = middlewareFile.WriteString(echo.BasicMiddleware("BasicMiddleware", "middlewares"))
 			lib.ErrorCheck(err)
 		}
 
@@ -92,6 +103,10 @@ var createProjectCmd = &cobra.Command{
 			lib.Info("Installing Gin...")
 			err = exec.Command("go", "get", "-u", "github.com/gin-gonic/gin").Run()
 			lib.ErrorCheck(err)
+		case "3":
+			lib.Info("Installing Echo...")
+			err = exec.Command("go", "get", "-u", "github.com/labstack/echo/v4").Run()
+			lib.ErrorCheck(err)
 		}
 		lib.Info("Creating rapi.json file")
 		var frameworkName string
@@ -100,6 +115,8 @@ var createProjectCmd = &cobra.Command{
 			frameworkName = "fiber"
 		case "2":
 			frameworkName = "gin"
+		case "3":
+			frameworkName = "echo"
 		}
 		lib.SetupConfig(lib.Config{
 			Framework:       frameworkName,
