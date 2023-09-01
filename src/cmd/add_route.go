@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/subtosharki/rapi/src/lib"
@@ -21,22 +22,32 @@ var newRouteCmd = &cobra.Command{
 	Short: "Add a new route",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		config := lib.GetConfig()
+		var config lib.Config
+		config.Get()
 		routeName := args[0]
 		if strings.Contains(routeName, "/") {
 			lib.Error("Route name cannot contain '/'")
-			lib.ExitBad()
 		}
 		_, err := os.Stat(config.RoutesPath + "/" + routeName + ".go")
 		if err == nil {
 			lib.Error("Route already exists")
-			lib.ExitBad()
+		}
+		var routeMethod string
+		lib.Info("Select route method:\n")
+		println("1. GET")
+		println("2. POST")
+		println("3. PUT")
+		println("4. PATCH")
+		println("5. DELETE")
+		for routeMethod != "1" && routeMethod != "2" && routeMethod != "3" && routeMethod != "4" && routeMethod != "5" {
+			_, err := fmt.Scanln(&routeMethod)
+			lib.ErrorCheck(err)
 		}
 		var routeType string
+		lib.Info("Select route type:\n")
+		println("1. Global")
+		println("2. Group")
 		for routeType != "1" && routeType != "2" {
-			lib.Info("Select route type:\n")
-			println("1. Global")
-			println("2. Group")
 			_, err := fmt.Scanln(&routeType)
 			lib.ErrorCheck(err)
 		}
@@ -48,417 +59,142 @@ var newRouteCmd = &cobra.Command{
 				lib.ErrorCheck(err)
 			}
 		}
-		file, err := os.OpenFile(config.MainFilePath, os.O_RDWR, 0644)
+		mainFile, err := os.OpenFile(config.MainFilePath, os.O_RDWR, 0644)
 		lib.ErrorCheck(err)
 		defer func(file *os.File) {
 			err := file.Close()
 			lib.ErrorCheck(err)
-		}(file)
+		}(mainFile)
 		mainFileBytes, err := os.ReadFile(config.MainFilePath)
 		lib.ErrorCheck(err)
 		splitMainFile := strings.Split(string(mainFileBytes), "\n")
+		pathName := strings.Split(config.RoutesPath, "/")
 		switch config.Framework {
 		case "fiber":
-			if routeType == "1" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "fiber.New") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find fiber.New")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			} else if routeType == "2" {
-				var appName string
-				for _, v := range splitMainFile {
-					if strings.Contains(v, "fiber.New") {
-						appName = strings.Split(v, " ")[0]
-						break
-					}
-				}
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, appName+".Group("+groupName+")") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("No group found")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			}
+			err := addRouteToMainFile(splitMainFile, routeName, routeType, mainFile, config, groupName, "fiber.New", "", false, routeMethod)
+			CreateFileIfNil(err, config, routeName, pathName, fiber.BasicRoute)
 		case "gin":
-			if routeType == "1" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "gin.Default") || strings.Contains(v, "gin.New") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find gin.Default or gin.New")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			} else if routeType == "2" {
-				var appName string
-				for _, v := range splitMainFile {
-					if strings.Contains(v, "gin.Default") || strings.Contains(v, "gin.New") {
-						appName = strings.Split(v, " ")[0]
-						break
-					}
-				}
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, appName+".Group("+groupName+")") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("No group found")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			}
+			err := addRouteToMainFile(splitMainFile, routeName, routeType, mainFile, config, groupName, "gin.Default", "gin.New", true, routeMethod)
+			CreateFileIfNil(err, config, routeName, pathName, gin.BasicRoute)
 		case "echo":
-			if routeType == "1" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "e := echo.New()") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find e := echo.New()")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			} else if routeType == "2" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "e := echo.New()") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find e := echo.New()")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Group(" + groupName + ").Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			}
+			err := addRouteToMainFile(splitMainFile, routeName, routeType, mainFile, config, groupName, "echo.New", "", true, routeMethod)
+			CreateFileIfNil(err, config, routeName, pathName, echo.BasicRoute)
 		case "chi":
-			if routeType == "1" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "r := chi.NewRouter()") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find r := chi.NewRouter()")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
-			} else if routeType == "2" {
-				var line int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "r := chi.NewRouter()") {
-						line = i
-						break
-					}
-				}
-				if line == 0 {
-					lib.Error("Could not find r := chi.NewRouter()")
-					lib.ExitBad()
-				}
-				wordsOfLine := strings.Split(splitMainFile[line], " ")
-				newLine := splitMainFile[line] + "\n" + wordsOfLine[0] + ".Group(" + groupName + ").Use(routes." + lib.UpFirstLetter(routeName) + ")"
-				splitMainFile[line] = newLine
-				var importStart int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, "(") {
-						importStart = i
-						break
-					}
-				}
-				var importEnd int
-				for i, v := range splitMainFile {
-					if strings.Contains(v, ")") {
-						importEnd = i
-						break
-					}
-				}
-				imports := splitMainFile[importStart:importEnd]
-				var found bool
-				for _, v := range imports {
-					if strings.Contains(v, "routes") {
-						found = true
-						break
-					}
-				}
-				if !found {
-					goModFile := lib.LoadGoModuleFile()
-					splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
-				}
-				finalString := strings.Join(splitMainFile, "\n")
-				_, err := file.WriteString(finalString)
-				lib.ErrorCheck(err)
+			err := addRouteToMainFile(splitMainFile, routeName, routeType, mainFile, config, groupName, "chi.NewRouter", "", false, routeMethod)
+			CreateFileIfNil(err, config, routeName, pathName, chi.BasicRoute)
+		}
+		lib.Info("New route " + routeName + " created successfully")
+		lib.ExitOk()
+	},
+}
+
+func addRouteToMainFile(splitMainFile []string, routeName string, routeType string, file *os.File, config lib.Config, groupName string, newRouterFuncName string, secondNewRouterFuncName string, methodNameCaps bool, routeMethod string) error {
+	var methodVarName string
+	switch routeMethod {
+	case "1":
+		methodVarName = "Get"
+	case "2":
+		methodVarName = "Post"
+	case "3":
+		methodVarName = "Put"
+	case "4":
+		methodVarName = "Patch"
+	case "5":
+		methodVarName = "Delete"
+	}
+	var importStart int
+	for i, v := range splitMainFile {
+		if strings.Contains(v, "(") {
+			importStart = i
+			break
+		}
+	}
+	var importEnd int
+	for i, v := range splitMainFile {
+		if strings.Contains(v, ")") {
+			importEnd = i
+			break
+		}
+	}
+	imports := splitMainFile[importStart:importEnd]
+	var found bool
+	for _, v := range imports {
+		if strings.Contains(v, "routes") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		goModFile := lib.LoadGoModuleFile()
+		splitMainFile[importStart+1] = splitMainFile[importStart+1] + "\n\"" + lib.GetGoModuleName(goModFile) + "/" + config.RoutesPath + "\"\n"
+	}
+	if routeType == "1" {
+		var line int
+		for i, v := range splitMainFile {
+			if strings.Contains(v, newRouterFuncName) {
+				line = i
+				break
 			}
 		}
+		if line == 0 && secondNewRouterFuncName == "" {
+			return errors.New("Could not find " + newRouterFuncName + " in main.go")
+		} else if line == 0 && secondNewRouterFuncName != "" {
+			for i, v := range splitMainFile {
+				if strings.Contains(v, secondNewRouterFuncName) {
+					line = i
+					break
+				}
+			}
+			if line == 0 {
+				return errors.New("Could not find " + newRouterFuncName + " or " + secondNewRouterFuncName + " in main.go")
+			}
+		}
+		appVarName := strings.Split(splitMainFile[line], " ")[0]
+		if methodNameCaps {
+			methodVarName = strings.ToUpper(methodVarName)
+		}
+		newLine := splitMainFile[line] + "\n" + appVarName + "." + methodVarName + "(\"" + routeName + "\" ,routes." + lib.UpFirstLetter(routeName) + ")"
+		splitMainFile[line] = newLine
+		finalString := strings.Join(splitMainFile, "\n")
+		_, err := file.WriteString(finalString)
+		if err != nil {
+			return err
+		}
+	} else if routeType == "2" {
+		var groupVarName string
+		var line int
+		for i, v := range splitMainFile {
+			if strings.Contains(v, groupName) {
+				line = i
+				groupVarName = strings.Split(splitMainFile[i], " ")[0]
+				break
+			}
+		}
+		if line == 0 {
+			return errors.New("no group found")
+		}
+		newLine := splitMainFile[line] + "\n" + groupVarName + "." + methodVarName + "(\"" + routeName + "\" ,routes." + lib.UpFirstLetter(routeName) + ")"
+		splitMainFile[line] = newLine
+		finalString := strings.Join(splitMainFile, "\n")
+		_, err := file.WriteString(finalString)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CreateFileIfNil(err error, config lib.Config, routeName string, pathName []string, templateFunc func(string, string) string) {
+	if err == nil {
 		newRouteFile, err := os.Create(config.RoutesPath + "/" + routeName + ".go")
 		lib.ErrorCheck(err)
 		defer func(newRouteFile *os.File) {
 			err := newRouteFile.Close()
 			lib.ErrorCheck(err)
 		}(newRouteFile)
-		pathName := strings.Split(config.RoutesPath, "/")
-		routeName = lib.UpFirstLetter(routeName)
-		switch config.Framework {
-		case "fiber":
-			_, err := newRouteFile.WriteString(fiber.BasicRoute(routeName, pathName[len(pathName)-1]))
-			lib.ErrorCheck(err)
-		case "gin":
-			_, err := newRouteFile.WriteString(gin.BasicRoute(routeName, pathName[len(pathName)-1]))
-			lib.ErrorCheck(err)
-		case "echo":
-			_, err := newRouteFile.WriteString(echo.BasicRoute(routeName, pathName[len(pathName)-1]))
-			lib.ErrorCheck(err)
-		case "chi":
-			_, err := newRouteFile.WriteString(chi.BasicRoute(routeName, pathName[len(pathName)-1]))
-			lib.ErrorCheck(err)
-		default:
-			lib.Error("Invalid framework")
-			lib.ExitBad()
-		}
-		lib.Info("New route " + routeName + " created successfully")
-		lib.ExitOk()
-	},
+		_, err = newRouteFile.WriteString(templateFunc(lib.UpFirstLetter(routeName), pathName[len(pathName)-1]))
+		lib.ErrorCheck(err)
+	} else {
+		lib.ErrorCheck(err)
+	}
 }

@@ -21,12 +21,10 @@ var initCmd = &cobra.Command{
 		_, err := os.Stat("rapi.json")
 		if err == nil {
 			lib.Error("rapi.json already exists")
-			lib.ExitBad()
 		}
 		_, err = os.Stat("go.mod")
 		if err != nil {
 			lib.Error("go.mod not found, is this an existing project?")
-			lib.ExitBad()
 		}
 		file := lib.LoadGoModuleFile()
 		lib.ErrorCheck(err)
@@ -44,7 +42,6 @@ var initCmd = &cobra.Command{
 			for _, framework := range supportedFrameworks {
 				println(framework)
 			}
-			lib.ExitBad()
 		}
 		projectName := lib.GetGoModuleName(file)
 		var routesPath string
@@ -66,7 +63,6 @@ var initCmd = &cobra.Command{
 			_, err = os.Stat(routesPath)
 			if err != nil {
 				lib.Error("Invalid path to routes")
-				lib.ExitBad()
 			}
 		}
 		var middlewaresPath string
@@ -88,7 +84,6 @@ var initCmd = &cobra.Command{
 			_, err = os.Stat(middlewaresPath)
 			if err != nil {
 				lib.Error("Invalid path to middlewares")
-				lib.ExitBad()
 			}
 		}
 		var mainFilePath string
@@ -110,15 +105,15 @@ var initCmd = &cobra.Command{
 			_, err = os.Stat(mainFilePath)
 			if err != nil {
 				lib.Error("Invalid path to main.go")
-				lib.ExitBad()
 			}
 		}
-		lib.SetupConfig(lib.Config{
-			ProjectName:     projectName,
+		var config lib.Config
+		config.Setup(lib.Config{
 			Framework:       foundFramework,
-			RoutesPath:      routesPath,
-			MiddlewaresPath: middlewaresPath,
-			MainFilePath:    mainFilePath,
+			ProjectName:     projectName,
+			RoutesPath:      "src/routes",
+			MiddlewaresPath: "src/middlewares",
+			MainFilePath:    "src/main.go",
 		})
 		lib.Info("Initialized successfully")
 		lib.ExitOk()

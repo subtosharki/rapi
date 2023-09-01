@@ -17,7 +17,8 @@ var newGroupCommand = &cobra.Command{
 	Short: "Add a new group",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		config := lib.GetConfig()
+		var config lib.Config
+		config.Get()
 		groupName := args[0]
 		var nestedGroup string
 		for nestedGroup != "y" && nestedGroup != "n" {
@@ -53,7 +54,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find app := fiber.New() in main.go")
-					lib.ExitBad()
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := app.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
@@ -68,7 +68,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if parentLine == 0 {
 					lib.Error("Could not find app.Group(\"/" + parentGroup + "\") in main.go")
-					lib.ExitBad()
 				}
 				if splitFile[parentLine+1] == "{" {
 					parentLine += 1
@@ -88,7 +87,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find r := gin.Default() in main.go")
-					lib.ExitBad()
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
@@ -103,7 +101,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if parentLine == 0 {
 					lib.Error("Could not find r.Group(\"/" + parentGroup + "\") in main.go")
-					lib.ExitBad()
 				}
 				if splitFile[parentLine+1] == "{" {
 					parentLine += 1
@@ -123,7 +120,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find e := echo.New() in main.go")
-					lib.ExitBad()
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := e.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
@@ -138,7 +134,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if parentLine == 0 {
 					lib.Error("Could not find e.Group(\"/" + parentGroup + "\") in main.go")
-					lib.ExitBad()
 				}
 				if splitFile[parentLine+1] == "{" {
 					parentLine += 1
@@ -158,7 +153,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find r := chi.NewRouter() in main.go")
-					lib.ExitBad()
 				}
 				splitFile[line] = splitFile[line] + "\n\t" + groupName + "Group := r.Group(\"/" + groupName + "\") \n{\n\n\t}"
 				finalString := strings.Join(splitFile, "\n")
@@ -173,7 +167,6 @@ var newGroupCommand = &cobra.Command{
 				}
 				if parentLine == 0 {
 					lib.Error("Could not find r.Group(\"/" + parentGroup + "\") in main.go")
-					lib.ExitBad()
 				}
 				if splitFile[parentLine+1] == "{" {
 					parentLine += 1

@@ -21,16 +21,15 @@ var newMiddlewareCmd = &cobra.Command{
 	Short: "Add a new middleware",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		config := lib.GetConfig()
+		var config lib.Config
+		config.Get()
 		middlewareName := args[0]
 		if strings.Contains(middlewareName, "/") {
 			lib.Error("Middleware name cannot contain /")
-			lib.ExitBad()
 		}
 		_, err := os.Stat(config.MiddlewaresPath + "/" + middlewareName + ".go")
 		if err == nil {
 			lib.Error("Middleware already exists")
-			lib.ExitBad()
 		}
 		var middlewareType string
 		for middlewareType != "1" && middlewareType != "2" && middlewareType != "3" {
@@ -76,7 +75,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find fiber.New")
-					lib.ExitBad()
 				}
 				wordsOfLine := strings.Split(splitFile[line], " ")
 				newLine := splitFile[line] + "\n" + wordsOfLine[0] + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
@@ -127,7 +125,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("No group found")
-					lib.ExitBad()
 				}
 				wordsOfLine := strings.Split(splitFile[line], " ")
 				newLine := splitFile[line] + "\n" + wordsOfLine[0] + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
@@ -178,7 +175,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find fiber.New")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + appName + ".Use(\"" + groupOrRouteName + "\", middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -223,7 +219,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find gin.Default or gin.New")
-					lib.ExitBad()
 				}
 				wordsOfLine := strings.Split(splitFile[line], " ")
 				newLine := splitFile[line] + "\n" + wordsOfLine[0] + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
@@ -274,7 +269,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("No group found")
-					lib.ExitBad()
 				}
 				wordsOfLine := strings.Split(splitFile[line], " ")
 				newLine := splitFile[line] + "\n" + wordsOfLine[0] + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
@@ -325,7 +319,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find fiber.New")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + appName + ".Use(\"" + groupOrRouteName + "\", middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -371,7 +364,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find echo.New()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + "e.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -414,7 +406,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find echo.New()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + "e.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -464,7 +455,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find echo.New()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + appName + ".Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -509,7 +499,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find chi.NewRouter()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -552,7 +541,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find chi.NewRouter()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -595,7 +583,6 @@ var newMiddlewareCmd = &cobra.Command{
 				}
 				if line == 0 {
 					lib.Error("Could not find chi.NewRouter()")
-					lib.ExitBad()
 				}
 				newLine := splitFile[line] + "\n" + "r.Use(middlewares." + lib.UpFirstLetter(middlewareName) + ")"
 				splitFile[line] = newLine
@@ -636,16 +623,16 @@ var newMiddlewareCmd = &cobra.Command{
 		middlewareName = lib.UpFirstLetter(middlewareName)
 		switch config.Framework {
 		case "fiber":
-			_, err := mainFile.WriteString(fiber.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(fiber.BasicMiddleware(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		case "gin":
-			_, err := mainFile.WriteString(gin.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(gin.BasicMiddleware(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		case "echo":
-			_, err := mainFile.WriteString(echo.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(echo.BasicMiddleware(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		case "chi":
-			_, err := mainFile.WriteString(chi.BasicRoute(middlewareName, pathName[len(pathName)-1]))
+			_, err := mainFile.WriteString(chi.BasicMiddleware(middlewareName, pathName[len(pathName)-1]))
 			lib.ErrorCheck(err)
 		}
 		lib.Info("New middleware " + middlewareName + " created successfully")

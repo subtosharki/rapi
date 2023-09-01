@@ -25,7 +25,6 @@ var createProjectCmd = &cobra.Command{
 		_, err := os.Open(args[0])
 		if err == nil {
 			lib.Error("Directory " + args[0] + " already exists")
-			lib.ExitBad()
 		}
 		println("Choose a Framework to use:\n")
 		println("1. Fiber")
@@ -135,7 +134,8 @@ var createProjectCmd = &cobra.Command{
 		case "4":
 			frameworkName = "chi"
 		}
-		lib.SetupConfig(lib.Config{
+		var config lib.Config
+		config.Setup(lib.Config{
 			Framework:       frameworkName,
 			ProjectName:     projectName,
 			RoutesPath:      "src/routes",
